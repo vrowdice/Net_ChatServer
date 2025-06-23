@@ -14,6 +14,7 @@ public static class PacketHandler
         // 패킷 ID 등록
         Handler[ConstPacketId.C_CHAT] = HandleCChat;
         Handler[ConstPacketId.C_LOGIN] = HandleCLogin;
+        Handler[ConstPacketId.C_WHISPER] = HandleCWhisper;
     }
 
     public static void HandlePacket(PacketSession session, ArraySegment<byte> buffer)
@@ -102,6 +103,33 @@ public static class PacketHandler
         catch (Exception ex)
         {
             Console.WriteLine($"[PacketHandler] HandleCLogin error: {ex.Message}");
+        }
+    }
+
+    private static void HandleCWhisper(PacketSession session, ArraySegment<byte> buffer)
+    {
+        if (session is not ClientSession clientSession)
+            return;
+
+        var whisperPacket = ClientWhisperPacket.FromBytes(buffer);
+
+        string senderId = clientSession.UserId ?? "Unknown";
+        string targetId = whisperPacket.TargetUserId;
+
+        var serverWhisperPacket = new ServerWhisperPacket
+        {
+            SenderUserId = senderId,
+            Message = whisperPacket.Message
+        };
+
+        var targetSession = SessionManager.Instance.FindByUserId(targetId);
+        if (targetSession != null)
+        {
+            targetSession.Send(serverWhisperPacket.ToBytes());
+        }
+        else
+        {
+            Console.WriteLine($"[PacketHandler] Whisper target '{targetId}' not found.");
         }
     }
 }
