@@ -120,10 +120,32 @@ namespace ChatClientWinForms
             this.userIdTextBox.TabIndex = 6;
             this.userIdTextBox.Text = "User123";
             this.Controls.Add(this.userIdTextBox);
+            // 
+            // userListBox
+            // 
+            this.userListBox = new System.Windows.Forms.ListBox();
+            this.userListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)));
+            this.userListBox.FormattingEnabled = true;
+            this.userListBox.ItemHeight = 12;
+            this.userListBox.Location = new System.Drawing.Point(12, 40);  // 기존 chatListBox의 왼쪽
+            this.userListBox.Name = "userListBox";
+            this.userListBox.Size = new System.Drawing.Size(120, 268);
+            this.userListBox.TabIndex = 7;
+            this.Controls.Add(this.userListBox);
+
+            this.chatListBox.Location = new System.Drawing.Point(138, 40);
+            this.chatListBox.Size = new System.Drawing.Size(334, 268);
+
+            this.messageInputTextBox.Location = new System.Drawing.Point(138, 317);
+            this.messageInputTextBox.Size = new System.Drawing.Size(253, 21);
+
+            this.sendButton.Location = new System.Drawing.Point(397, 315);
         }
 
         #endregion
 
+        private System.Windows.Forms.ListBox userListBox;
         private System.Windows.Forms.TextBox userIdTextBox;
         private System.Windows.Forms.TextBox ipTextBox;
         private System.Windows.Forms.TextBox portTextBox;

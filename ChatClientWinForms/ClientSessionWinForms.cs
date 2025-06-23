@@ -50,6 +50,11 @@ public class ClientSessionWinForms : PacketSession
             ServerLoginOkPacket loginOkPacket = ServerLoginOkPacket.FromBytes(buffer);
             OnLoginOk(loginOkPacket);
         }
+        else if (packetId == ConstPacketId.S_WHISPER)
+        {
+            ServerWhisperPacket whisper = ServerWhisperPacket.FromBytes(buffer);
+            _form.DisplayMessage($"[Whisper from {whisper.SenderUserId}] {whisper.Message}");
+        }
         else
         {
             _form.DisplayMessage($"알 수 없는 패킷 수신: ID={packetId}");

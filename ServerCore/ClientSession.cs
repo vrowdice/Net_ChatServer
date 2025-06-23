@@ -16,6 +16,9 @@ public class ClientSession : PacketSession
     {
         Console.WriteLine($"[ClientSession] Disconnected: {endPoint} (User: {UserId ?? "Unknown"})");
         SessionManager.Instance.Remove(this);
+
+        // 유저 목록 갱신 브로드캐스트
+        SessionManager.Instance.BroadcastUserList();
     }
 
     public override void OnRecvPacket(ArraySegment<byte> buffer)

@@ -44,6 +44,8 @@ public class SessionManager
     {
         lock (_lock)
         {
+            List<Session> toRemove = new();
+
             foreach (Session session in _sessions)
             {
                 try
@@ -52,8 +54,15 @@ public class SessionManager
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error sending to session {session.SessionId}: {ex.Message}");
+                    Console.WriteLine($"[Broadcast Error] Session {session.SessionId}: {ex.Message}");
+                    toRemove.Add(session); // 실패한 세션은 제거 대상
                 }
+            }
+
+            // 실패한 세션 제거
+            foreach (var session in toRemove)
+            {
+                _sessions.Remove(session);
             }
         }
     }
@@ -65,5 +74,36 @@ public class SessionManager
         {
             return new List<Session>(_sessions); // _sessions 리스트의 복사본 반환 (외부 수정 방지)
         }
+    }
+
+    public ClientSession FindByUserId(string userId)
+    {
+        lock (_lock)
+        {
+            foreach (Session s in _sessions)
+            {
+                if (s is ClientSession cs && cs.UserId == userId)
+                    return cs;
+            }
+        }
+        return null;
+    }
+
+    public void BroadcastUserList()
+    {
+        List<string> userIds = new List<string>();
+        lock (_lock)
+        {
+            foreach (Session session in _sessions)
+            {
+                if (session is ClientSession cs && cs.UserId != null)
+                    userIds.Add(cs.UserId);
+            }
+        }
+
+        ServerUserListPacket packet = new ServerUserListPacket { UserIds = userIds };
+        ArraySegment<byte> sendBuffer = packet.ToBytes();
+
+        Broadcast(sendBuffer);
     }
 }

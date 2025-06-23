@@ -4,13 +4,15 @@ using ServerCore;
 
 public class PacketHandler
 {
-    public static Action<ClientSessionWinForms, ArraySegment<byte>>[] Handler { get; private set; }
+    public static Action<ClientSessionWinForms, ArraySegment<byte>>[]? Handler { get; private set; }
 
     public static void Init()
     {
         Handler = new Action<ClientSessionWinForms, ArraySegment<byte>>[2000];
         Handler[ConstPacketId.S_CHAT] = HandleSChat;
         Handler[ConstPacketId.S_LOGIN_OK] = HandleSLoginOk;
+        Handler[ConstPacketId.C_WHISPER] = HandleCWhisper;
+        Handler[ConstPacketId.S_USER_LIST] = HandleSUserList;
     }
 
     private static void HandleSChat(ClientSessionWinForms session, ArraySegment<byte> buffer)
@@ -23,5 +25,37 @@ public class PacketHandler
     {
         var loginOkPacket = ServerLoginOkPacket.FromBytes(buffer);
         session.OnLoginOk(loginOkPacket);
+    }
+
+    public static void HandleCWhisper(PacketSession session, ArraySegment<byte> buffer)
+    {
+        if (session is not ClientSession clientSession)
+            return;
+
+        ClientWhisperPacket whisperPacket = ClientWhisperPacket.FromBytes(buffer);
+        string senderId = clientSession.UserId ?? "Unknown";
+
+        ClientSession targetSession = SessionManager.Instance.FindByUserId(whisperPacket.TargetUserId);
+        if (targetSession == null)
+        {
+            Console.WriteLine($"[Whisper] 대상 사용자 없음: {whisperPacket.TargetUserId}");
+            return;
+        }
+
+        ServerWhisperPacket response = new ServerWhisperPacket
+        {
+            SenderUserId = senderId,
+            Message = whisperPacket.Message
+        };
+
+        targetSession.Send(response.ToBytes());
+
+        Console.WriteLine($"[Whisper] {senderId} -> {whisperPacket.TargetUserId}: {whisperPacket.Message}");
+    }
+
+    private static void HandleSUserList(ClientSessionWinForms session, ArraySegment<byte> buffer)
+    {
+        var userListPacket = ServerUserListPacket.FromBytes(buffer);
+        session.FormInvoke(() => session._form.UpdateUserList(userListPacket.UserIds));
     }
 }
