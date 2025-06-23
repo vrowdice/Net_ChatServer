@@ -1,5 +1,7 @@
-﻿using System;
+﻿//ServerCore/PacketHandler.cs
 using ServerCore;
+using System;
+using System.Collections.Generic;
 
 public static class PacketHandler
 {
@@ -8,13 +10,15 @@ public static class PacketHandler
 
     public static void Init()
     {
-        Console.WriteLine("[PacketHandler] Init() called.");
         Handler = new Action<PacketSession, ArraySegment<byte>>[2000];
 
         // 패킷 ID 등록
         Handler[ConstPacketId.C_CHAT] = HandleCChat;
         Handler[ConstPacketId.C_LOGIN] = HandleCLogin;
         Handler[ConstPacketId.C_WHISPER] = HandleCWhisper;
+        Handler[ConstPacketId.C_ROOM_CHANGE] = HandleCRoomChange;
+        Handler[ConstPacketId.C_ROOM_CREATE] = HandleCRoomCreate;
+        Handler[ConstPacketId.C_ROOM_LIST] = HandleCRoomList;
     }
 
     public static void HandlePacket(PacketSession session, ArraySegment<byte> buffer)
@@ -132,4 +136,114 @@ public static class PacketHandler
             Console.WriteLine($"[PacketHandler] Whisper target '{targetId}' not found.");
         }
     }
+
+    // ServerCore/PacketHandler.cs (일부)
+
+    private static void HandleCRoomChange(PacketSession session, ArraySegment<byte> buffer)
+    {
+        if (session is not ClientSession clientSession)
+            return;
+
+        try
+        {
+            var roomChangePacket = ClientRoomChangePacket.FromBytes(buffer);
+            int requestedRoomId = roomChangePacket.RoomId;
+
+            Console.WriteLine($"User '{clientSession.UserId}' requests room change to room ID: {requestedRoomId}");
+
+            // 현재 방에서 세션 제거
+            if (clientSession.CurrentRoom != null)
+            {
+                clientSession.CurrentRoom.RemoveSession(clientSession);
+                Console.WriteLine($"User '{clientSession.UserId}' left room ID: {clientSession.CurrentRoom.Id}");
+            }
+
+            // 요청된 방으로 세션 추가
+            ChatRoom targetRoom = RoomManager.Instance.FindRoom(requestedRoomId);
+
+            if (targetRoom != null)
+            {
+                targetRoom.AddSession(clientSession);
+                clientSession.CurrentRoom = targetRoom;
+                Console.WriteLine($"User '{clientSession.UserId}' joined room ID: {targetRoom.Id} (Name: {targetRoom.Name})");
+
+                // 클라이언트에 방 변경 성공 응답 전송
+                var resultPacket = new ServerRoomChangeResultPacket
+                {
+                    Success = true,
+                    RoomId = targetRoom.Id
+                };
+                clientSession.Send(resultPacket.ToBytes());
+            }
+            else
+            {
+                Console.WriteLine($"[PacketHandler] Room ID {requestedRoomId} not found. User '{clientSession.UserId}' remains in previous state.");
+                // 클라이언트에 방 변경 실패 응답 전송
+                var resultPacket = new ServerRoomChangeResultPacket
+                {
+                    Success = false,
+                    RoomId = requestedRoomId
+                };
+                clientSession.Send(resultPacket.ToBytes());
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PacketHandler] HandleCRoomChange error for user '{clientSession.UserId}': {ex.Message}");
+        }
+    }
+
+    private static void HandleCRoomCreate(PacketSession session, ArraySegment<byte> buffer)
+    {
+        if (session is not ClientSession clientSession)
+            return;
+
+        try
+        {
+            var packet = ClientRoomCreatePacket.FromBytes(buffer);
+            string roomName = packet.RoomName;
+
+            Console.WriteLine($"[PacketHandler] Room create request: {roomName}");
+
+            RoomManager.Instance.CreateRoomIfNotExist(roomName);
+
+            var okPacket = new ServerRoomCreateOkPacket { RoomId = roomName };
+            clientSession.Send(okPacket.ToBytes());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PacketHandler] HandleCRoomCreate error: {ex.Message}");
+        }
+    }
+
+    private static void HandleCRoomList(PacketSession session, ArraySegment<byte> buffer)
+    {
+        if (session is not ClientSession clientSession)
+            return;
+
+        try
+        {
+            Console.WriteLine($"[PacketHandler] Room list request");
+
+            var roomIds = RoomManager.Instance.GetAllRoomIds();
+
+            if (roomIds == null || roomIds.Count == 0)
+            {
+                Console.WriteLine("[PacketHandler] No rooms available.");
+                roomIds = new List<int>();
+            }
+
+            var listPacket = new ServerRoomListPacket
+            {
+                RoomIds = roomIds
+            };
+
+            clientSession.Send(listPacket.ToBytes());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PacketHandler] HandleCRoomList error: {ex.Message}");
+        }
+    }
+
 }

@@ -44,9 +44,7 @@ public class SessionManager
     {
         lock (_lock)
         {
-            List<Session> toRemove = new();
-
-            foreach (Session session in _sessions)
+            foreach (Session session in _sessions.ToArray())
             {
                 try
                 {
@@ -55,14 +53,8 @@ public class SessionManager
                 catch (Exception ex)
                 {
                     Console.WriteLine($"[Broadcast Error] Session {session.SessionId}: {ex.Message}");
-                    toRemove.Add(session); // 실패한 세션은 제거 대상
+                    session.Disconnect();
                 }
-            }
-
-            // 실패한 세션 제거
-            foreach (var session in toRemove)
-            {
-                _sessions.Remove(session);
             }
         }
     }

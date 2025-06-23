@@ -29,122 +29,190 @@ namespace ChatClientWinForms
         /// </summary>
         private void InitializeComponent()
         {
-            this.ipTextBox = new System.Windows.Forms.TextBox();
-            this.portTextBox = new System.Windows.Forms.TextBox();
-            this.connectButton = new System.Windows.Forms.Button();
-            this.chatListBox = new System.Windows.Forms.ListBox(); // <--- 이 부분이 추가됩니다.
-            this.messageInputTextBox = new System.Windows.Forms.TextBox();
-            this.sendButton = new System.Windows.Forms.Button();
-            this.SuspendLayout();
+            ipTextBox = new TextBox();
+            portTextBox = new TextBox();
+            connectButton = new Button();
+            chatListBox = new ListBox();
+            messageInputTextBox = new TextBox();
+            sendButton = new Button();
+            userIdTextBox = new TextBox();
+            userListBox = new ListBox();
+            roomListBox = new ListBox();
+            switchRoomButton = new Button();
+            createRoomButton = new Button();
+            refreshRoomListButton = new Button();
+            currentRoomLabel = new Label(); // 새로 추가: currentRoomLabel 변수 선언
+            SuspendLayout();
             //
             // ipTextBox
             //
-            this.ipTextBox.Location = new System.Drawing.Point(12, 12);
-            this.ipTextBox.Name = "ipTextBox";
-            this.ipTextBox.Size = new System.Drawing.Size(150, 21);
-            this.ipTextBox.TabIndex = 0;
-            this.ipTextBox.Text = "127.0.0.1"; // 기본 IP 주소
+            ipTextBox.Location = new Point(12, 13);
+            ipTextBox.Margin = new Padding(3, 4, 3, 4);
+            ipTextBox.Name = "ipTextBox";
+            ipTextBox.Size = new Size(150, 23);
+            ipTextBox.TabIndex = 0;
+            ipTextBox.Text = "127.0.0.1";
+            ipTextBox.TextChanged += ipTextBox_TextChanged;
             //
             // portTextBox
             //
-            this.portTextBox.Location = new System.Drawing.Point(168, 12);
-            this.portTextBox.Name = "portTextBox";
-            this.portTextBox.Size = new System.Drawing.Size(80, 21);
-            this.portTextBox.TabIndex = 1;
-            this.portTextBox.Text = "7777"; // 기본 포트 번호
+            portTextBox.Location = new Point(168, 13);
+            portTextBox.Margin = new Padding(3, 4, 3, 4);
+            portTextBox.Name = "portTextBox";
+            portTextBox.Size = new Size(80, 23);
+            portTextBox.TabIndex = 1;
+            portTextBox.Text = "7777";
             //
             // connectButton
             //
-            this.connectButton.Location = new System.Drawing.Point(254, 10);
-            this.connectButton.Name = "connectButton";
-            this.connectButton.Size = new System.Drawing.Size(75, 23);
-            this.connectButton.TabIndex = 2;
-            this.connectButton.Text = "연결";
-            this.connectButton.UseVisualStyleBackColor = true;
-            this.connectButton.Click += new System.EventHandler(this.connectButton_Click);
+            connectButton.Location = new Point(397, 9);
+            connectButton.Margin = new Padding(3, 4, 3, 4);
+            connectButton.Name = "connectButton";
+            connectButton.Size = new Size(75, 29);
+            connectButton.TabIndex = 2;
+            connectButton.Text = "연결";
+            connectButton.UseVisualStyleBackColor = true;
+            connectButton.Click += connectButton_Click;
             //
             // chatListBox
             //
-            this.chatListBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.chatListBox.FormattingEnabled = true;
-            this.chatListBox.ItemHeight = 12;
-            this.chatListBox.Location = new System.Drawing.Point(12, 40);
-            this.chatListBox.Name = "chatListBox";
-            this.chatListBox.Size = new System.Drawing.Size(460, 268);
-            this.chatListBox.TabIndex = 3;
+            chatListBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            chatListBox.FormattingEnabled = true;
+            chatListBox.ItemHeight = 15;
+            chatListBox.Location = new Point(138, 50);
+            chatListBox.Margin = new Padding(3, 4, 3, 4);
+            chatListBox.Name = "chatListBox";
+            chatListBox.Size = new Size(334, 319);
+            chatListBox.TabIndex = 3;
             //
             // messageInputTextBox
             //
-            this.messageInputTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.messageInputTextBox.Location = new System.Drawing.Point(12, 317);
-            this.messageInputTextBox.Name = "messageInputTextBox";
-            this.messageInputTextBox.Size = new System.Drawing.Size(379, 21);
-            this.messageInputTextBox.TabIndex = 4;
-            this.messageInputTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.messageInputTextBox_KeyDown);
+            messageInputTextBox.Anchor = AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            messageInputTextBox.Location = new Point(93, 388);
+            messageInputTextBox.Margin = new Padding(3, 4, 3, 4);
+            messageInputTextBox.Name = "messageInputTextBox";
+            messageInputTextBox.Size = new Size(298, 23);
+            messageInputTextBox.TabIndex = 4;
+            messageInputTextBox.KeyDown += messageInputTextBox_KeyDown;
             //
             // sendButton
             //
-            this.sendButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.sendButton.Location = new System.Drawing.Point(397, 315);
-            this.sendButton.Name = "sendButton";
-            this.sendButton.Size = new System.Drawing.Size(75, 23);
-            this.sendButton.TabIndex = 5;
-            this.sendButton.Text = "전송";
-            this.sendButton.UseVisualStyleBackColor = true;
-            this.sendButton.Click += new System.EventHandler(this.sendButton_Click);
+            sendButton.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
+            sendButton.Location = new Point(397, 384);
+            sendButton.Margin = new Padding(3, 4, 3, 4);
+            sendButton.Name = "sendButton";
+            sendButton.Size = new Size(75, 29);
+            sendButton.TabIndex = 5;
+            sendButton.Text = "전송";
+            sendButton.UseVisualStyleBackColor = true;
+            sendButton.Click += sendButton_Click;
+            //
+            // userIdTextBox
+            //
+            userIdTextBox.Location = new Point(254, 13);
+            userIdTextBox.Margin = new Padding(3, 4, 3, 4);
+            userIdTextBox.Name = "userIdTextBox";
+            userIdTextBox.Size = new Size(132, 23);
+            userIdTextBox.TabIndex = 6;
+            userIdTextBox.Text = "User123";
+            //
+            // userListBox
+            //
+            userListBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            userListBox.FormattingEnabled = true;
+            userListBox.ItemHeight = 15;
+            userListBox.Location = new Point(12, 50);
+            userListBox.Margin = new Padding(3, 4, 3, 4);
+            userListBox.Name = "userListBox";
+            userListBox.Size = new Size(120, 319);
+            userListBox.TabIndex = 7;
+            //
+            // roomListBox
+            //
+            roomListBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left;
+            roomListBox.FormattingEnabled = true;
+            roomListBox.ItemHeight = 15;
+            roomListBox.Location = new Point(93, 419);
+            roomListBox.Margin = new Padding(3, 4, 3, 4);
+            roomListBox.Name = "roomListBox";
+            roomListBox.Size = new Size(379, 79);
+            roomListBox.TabIndex = 8;
+            //
+            // switchRoomButton
+            //
+            switchRoomButton.Location = new Point(12, 429);
+            switchRoomButton.Margin = new Padding(3, 4, 3, 4);
+            switchRoomButton.Name = "switchRoomButton";
+            switchRoomButton.Size = new Size(75, 29);
+            switchRoomButton.TabIndex = 9;
+            switchRoomButton.Text = "방 전환";
+            switchRoomButton.UseVisualStyleBackColor = true;
+            switchRoomButton.Click += switchRoomButton_Click;
+            //
+            // createRoomButton
+            //
+            createRoomButton.Location = new Point(12, 392);
+            createRoomButton.Margin = new Padding(3, 4, 3, 4);
+            createRoomButton.Name = "createRoomButton";
+            createRoomButton.Size = new Size(75, 29);
+            createRoomButton.TabIndex = 8;
+            createRoomButton.Text = "방 생성";
+            createRoomButton.UseVisualStyleBackColor = true;
+            createRoomButton.Click += createRoomButton_Click;
+            //
+            // refreshRoomListButton
+            //
+            refreshRoomListButton.Location = new Point(12, 466);
+            refreshRoomListButton.Margin = new Padding(3, 4, 3, 4);
+            refreshRoomListButton.Name = "refreshRoomListButton";
+            refreshRoomListButton.Size = new Size(75, 29);
+            refreshRoomListButton.TabIndex = 9;
+            refreshRoomListButton.Text = "갱신";
+            refreshRoomListButton.UseVisualStyleBackColor = true;
+            refreshRoomListButton.Click += refreshRoomListButton_Click;
+            //
+            // currentRoomLabel
+            //
+            currentRoomLabel.AutoSize = true; // 텍스트 길이에 따라 자동으로 크기 조절
+            currentRoomLabel.Location = new Point(12, 370); // 적절한 위치로 조정
+            currentRoomLabel.Name = "currentRoomLabel";
+            currentRoomLabel.Size = new Size(100, 15); // 적절한 초기 크기
+            currentRoomLabel.TabIndex = 10; // 기존 컨트롤들의 TabIndex와 겹치지 않게 조정
+            currentRoomLabel.Text = "현재 방: 로비"; // 초기 텍스트 설정
             //
             // Form1
             //
-            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
-            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(484, 361);
-            this.Controls.Add(this.sendButton);
-            this.Controls.Add(this.messageInputTextBox);
-            this.Controls.Add(this.chatListBox); // <--- Controls에 추가하는 부분
-            this.Controls.Add(this.connectButton);
-            this.Controls.Add(this.portTextBox);
-            this.Controls.Add(this.ipTextBox);
-            this.MinimumSize = new System.Drawing.Size(400, 300); // 최소 크기 설정
-            this.Name = "Form1";
-            this.Text = "채팅 클라이언트";
-            this.ResumeLayout(false);
-            this.PerformLayout();
+            AutoScaleDimensions = new SizeF(7F, 15F);
+            AutoScaleMode = AutoScaleMode.Font;
+            ClientSize = new Size(484, 508);
+            Controls.Add(sendButton);
+            Controls.Add(messageInputTextBox);
+            Controls.Add(chatListBox);
+            Controls.Add(connectButton);
+            Controls.Add(portTextBox);
+            Controls.Add(ipTextBox);
+            Controls.Add(userIdTextBox);
+            Controls.Add(userListBox);
+            Controls.Add(roomListBox);
+            Controls.Add(switchRoomButton);
+            Controls.Add(createRoomButton);
+            Controls.Add(refreshRoomListButton);
+            Controls.Add(currentRoomLabel); // 새로 추가: currentRoomLabel을 폼에 추가
+            Margin = new Padding(3, 4, 3, 4);
+            MinimumSize = new Size(400, 365);
+            Name = "Form1";
+            Text = "채팅 클라이언트";
+            ResumeLayout(false);
+            PerformLayout(); // PerformLayout() 호출은 SuspendLayout() 다음에 와야 합니다.
 
-            this.userIdTextBox = new System.Windows.Forms.TextBox();
-            this.userIdTextBox.Location = new System.Drawing.Point(340, 12);
-            this.userIdTextBox.Name = "userIdTextBox";
-            this.userIdTextBox.Size = new System.Drawing.Size(100, 21);
-            this.userIdTextBox.TabIndex = 6;
-            this.userIdTextBox.Text = "User123";
-            this.Controls.Add(this.userIdTextBox);
-            // 
-            // userListBox
-            // 
-            this.userListBox = new System.Windows.Forms.ListBox();
-            this.userListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
-            | System.Windows.Forms.AnchorStyles.Left)));
-            this.userListBox.FormattingEnabled = true;
-            this.userListBox.ItemHeight = 12;
-            this.userListBox.Location = new System.Drawing.Point(12, 40);  // 기존 chatListBox의 왼쪽
-            this.userListBox.Name = "userListBox";
-            this.userListBox.Size = new System.Drawing.Size(120, 268);
-            this.userListBox.TabIndex = 7;
-            this.Controls.Add(this.userListBox);
-
-            this.chatListBox.Location = new System.Drawing.Point(138, 40);
-            this.chatListBox.Size = new System.Drawing.Size(334, 268);
-
-            this.messageInputTextBox.Location = new System.Drawing.Point(138, 317);
-            this.messageInputTextBox.Size = new System.Drawing.Size(253, 21);
-
-            this.sendButton.Location = new System.Drawing.Point(397, 315);
         }
 
         #endregion
 
+        private System.Windows.Forms.Button createRoomButton;
+        private System.Windows.Forms.Button refreshRoomListButton;
+        private System.Windows.Forms.ListBox roomListBox;
+        private System.Windows.Forms.Button switchRoomButton;
         private System.Windows.Forms.ListBox userListBox;
         private System.Windows.Forms.TextBox userIdTextBox;
         private System.Windows.Forms.TextBox ipTextBox;
@@ -153,5 +221,6 @@ namespace ChatClientWinForms
         private System.Windows.Forms.ListBox chatListBox;
         private System.Windows.Forms.TextBox messageInputTextBox;
         private System.Windows.Forms.Button sendButton;
+        private System.Windows.Forms.Label currentRoomLabel; // 새로 추가: currentRoomLabel 멤버 변수 선언
     }
 }

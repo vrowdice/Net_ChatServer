@@ -53,36 +53,66 @@ public class ClientSessionWinForms : PacketSession
 
         ushort packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
 
-        switch (packetId)
+        // UI 업데이트는 FormInvoke를 통해 UI 스레드에서 실행
+        FormInvoke(() =>
         {
-            case ConstPacketId.S_CHAT:
-                {
-                    var chatPacket = ServerChatPacket.FromBytes(buffer);
-                    _form.DisplayMessage($"[메시지] {chatPacket.Message}");
+            switch (packetId)
+            {
+                case ConstPacketId.S_CHAT:
+                    {
+                        var chatPacket = ServerChatPacket.FromBytes(buffer);
+                        _form.DisplayMessage($"[메시지] {chatPacket.Message}");
+                        break;
+                    }
+                case ConstPacketId.S_LOGIN_OK:
+                    {
+                        var loginOkPacket = ServerLoginOkPacket.FromBytes(buffer);
+                        OnLoginOk(loginOkPacket);
+                        break;
+                    }
+                case ConstPacketId.S_WHISPER:
+                    {
+                        var whisperPacket = ServerWhisperPacket.FromBytes(buffer);
+                        _form.DisplayMessage($"[Whisper from {whisperPacket.SenderUserId}] {whisperPacket.Message}");
+                        break;
+                    }
+                case ConstPacketId.S_USER_LIST:
+                    {
+                        var userListPacket = ServerUserListPacket.FromBytes(buffer);
+                        _form.UpdateUserList(userListPacket.UserIds);
+                        break;
+                    }
+                case ConstPacketId.S_ROOM_CREATE_OK:
+                    {
+                        var roomCreateOkPacket = ServerRoomCreateOkPacket.FromBytes(buffer);
+                        _form.DisplayMessage($"방 생성 성공: {roomCreateOkPacket.RoomId}");
+                        break;
+                    }
+                case ConstPacketId.S_ROOM_LIST:
+                    {
+                        var roomListPacket = ServerRoomListPacket.FromBytes(buffer);
+                        _form.UpdateRoomList(roomListPacket.RoomIds);
+                        break;
+                    }
+                case ConstPacketId.S_ROOM_CHANGE_RESULT:
+                    {
+                        var resultPacket = ServerRoomChangeResultPacket.FromBytes(buffer);
+                        if (resultPacket.Success)
+                        {
+                            _form.DisplayMessage($"방 변경 성공! 새로운 방 ID: {resultPacket.RoomId}");
+                            _form.UpdateCurrentRoomDisplay($"Room {resultPacket.RoomId}"); // '현재 방' 라벨 업데이트
+                        }
+                        else
+                        {
+                            _form.DisplayMessage($"방 변경 실패! 요청한 방 ID: {resultPacket.RoomId}");
+                        }
+                        break;
+                    }
+                default:
+                    _form.DisplayMessage($"알 수 없는 패킷 수신: ID={packetId}");
                     break;
-                }
-            case ConstPacketId.S_LOGIN_OK:
-                {
-                    var loginOkPacket = ServerLoginOkPacket.FromBytes(buffer);
-                    OnLoginOk(loginOkPacket);
-                    break;
-                }
-            case ConstPacketId.S_WHISPER:
-                {
-                    var whisperPacket = ServerWhisperPacket.FromBytes(buffer);
-                    _form.DisplayMessage($"[Whisper from {whisperPacket.SenderUserId}] {whisperPacket.Message}");
-                    break;
-                }
-            case ConstPacketId.S_USER_LIST:
-                {
-                    var userListPacket = ServerUserListPacket.FromBytes(buffer);
-                    _form.UpdateUserList(userListPacket.UserIds);
-                    break;
-                }
-            default:
-                _form.DisplayMessage($"알 수 없는 패킷 수신: ID={packetId}");
-                break;
-        }
+            }
+        });
     }
 
 
@@ -107,5 +137,4 @@ public class ClientSessionWinForms : PacketSession
             action();
         }
     }
-
 }

@@ -5,7 +5,8 @@ using ServerCore;
 public class ClientSession : PacketSession
 {
     public string UserId { get; set; } = null;
-
+    public int? CurrentRoomId { get; set; } = null;
+    public ChatRoom CurrentRoom { get; set; }
     public override void OnConnected(EndPoint endPoint)
     {
         Console.WriteLine($"[ClientSession] Connected: {endPoint}");
@@ -23,20 +24,8 @@ public class ClientSession : PacketSession
 
     public override void OnRecvPacket(ArraySegment<byte> buffer)
     {
-        ushort packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
-
-        switch (packetId)
-        {
-            case ConstPacketId.C_LOGIN:
-            case ConstPacketId.C_CHAT:
-            case ConstPacketId.C_WHISPER:
-                PacketHandler.HandlePacket(this, buffer);
-                break;
-
-            default:
-                Console.WriteLine($"Unknown packet received: {packetId}");
-                break;
-        }
+        ushort packetId = BitConverter.ToUInt16(buffer.Array!, buffer.Offset + 2);
+        PacketHandler.HandlePacket(this, buffer);
     }
 
 

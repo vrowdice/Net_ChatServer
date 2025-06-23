@@ -13,6 +13,8 @@ public class PacketHandler
         Handler[ConstPacketId.S_LOGIN_OK] = HandleSLoginOk;
         Handler[ConstPacketId.C_WHISPER] = HandleCWhisper;
         Handler[ConstPacketId.S_USER_LIST] = HandleSUserList;
+        Handler[ConstPacketId.S_ROOM_CREATE_OK] = HandleSRoomCreateOk;
+        Handler[ConstPacketId.S_ROOM_LIST] = HandleSRoomList;
     }
 
     private static void HandleSChat(ClientSessionWinForms session, ArraySegment<byte> buffer)
@@ -70,6 +72,45 @@ public class PacketHandler
         {
             await Task.Delay(100);
             SessionManager.Instance.BroadcastUserList();
+        });
+    }
+
+    private static void HandleSRoomCreateOk(ClientSessionWinForms session, ArraySegment<byte> buffer)
+    {
+        var roomCreateOkPacket = ServerRoomCreateOkPacket.FromBytes(buffer);
+        session.FormInvoke(() =>
+        {
+            session._form.DisplayRoomCreateResult(roomCreateOkPacket.RoomId);
+        });
+    }
+
+    private static void HandleSRoomList(ClientSessionWinForms session, ArraySegment<byte> buffer)
+    {
+        var roomListPacket = ServerRoomListPacket.FromBytes(buffer);
+        session.FormInvoke(() =>
+        {
+            session._form.UpdateRoomList(roomListPacket.RoomIds);
+        });
+    }
+
+    private static void HandleSRoomChangeResult(ClientSessionWinForms session, ArraySegment<byte> buffer)
+    {
+        ClientSessionWinForms clientSession = session as ClientSessionWinForms;
+        if (clientSession == null) return;
+
+        ServerRoomChangeResultPacket resultPacket = ServerRoomChangeResultPacket.FromBytes(buffer);
+
+        clientSession.FormInvoke(() =>
+        {
+            if (resultPacket.Success)
+            {
+                session._form.DisplayMessage($"방 변경 성공! 새로운 방 ID: {resultPacket.RoomId}");
+                session._form.UpdateCurrentRoomDisplay($"Room {resultPacket.RoomId}"); // 여기에 '현재 방' 라벨 업데이트
+            }
+            else
+            {
+                session._form.DisplayMessage($"방 변경 실패! 요청한 방 ID: {resultPacket.RoomId}");
+            }
         });
     }
 }

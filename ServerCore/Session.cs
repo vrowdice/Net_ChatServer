@@ -106,11 +106,11 @@ namespace ServerCore
 
 		void RegisterSend()
 		{
-			while (_sendQueue.Count > 0)
+            while (_sendQueue.Count > 0)
 			{
 				ArraySegment<byte> buff = _sendQueue.Dequeue();
 				_pendingList.Add(buff);
-			}
+            }
 			_sendArgs.BufferList = _pendingList;
 
 			bool pending = _socket.SendAsync(_sendArgs);
