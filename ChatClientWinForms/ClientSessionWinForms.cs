@@ -73,6 +73,12 @@ public class ClientSessionWinForms : PacketSession
                     _form.DisplayMessage($"[Whisper from {whisperPacket.SenderUserId}] {whisperPacket.Message}");
                     break;
                 }
+            case ConstPacketId.S_USER_LIST:
+                {
+                    var userListPacket = ServerUserListPacket.FromBytes(buffer);
+                    _form.UpdateUserList(userListPacket.UserIds);
+                    break;
+                }
             default:
                 _form.DisplayMessage($"알 수 없는 패킷 수신: ID={packetId}");
                 break;

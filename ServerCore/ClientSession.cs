@@ -25,21 +25,20 @@ public class ClientSession : PacketSession
     {
         ushort packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
 
-        if (packetId == ConstPacketId.C_LOGIN)
+        switch (packetId)
         {
-            ClientLoginPacket loginPacket = ClientLoginPacket.FromBytes(buffer);
-            UserId = loginPacket.UserId;
-            Console.WriteLine($"User logged in: {UserId}");
-        }
-        else if (packetId == ConstPacketId.C_CHAT)
-        {
-            PacketHandler.HandlePacket(this, buffer);
-        }
-        else
-        {
-            Console.WriteLine($"Unknown packet received: {packetId}");
+            case ConstPacketId.C_LOGIN:
+            case ConstPacketId.C_CHAT:
+            case ConstPacketId.C_WHISPER:
+                PacketHandler.HandlePacket(this, buffer);
+                break;
+
+            default:
+                Console.WriteLine($"Unknown packet received: {packetId}");
+                break;
         }
     }
+
 
     public override void OnSend(int numOfBytes)
     {

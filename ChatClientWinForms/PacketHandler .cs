@@ -58,4 +58,18 @@ public class PacketHandler
         var userListPacket = ServerUserListPacket.FromBytes(buffer);
         session.FormInvoke(() => session._form.UpdateUserList(userListPacket.UserIds));
     }
+
+    public static void HandleLogin(ClientSession session, ClientLoginPacket loginPacket)
+    {
+        session.UserId = loginPacket.UserId;
+
+        var ok = new ServerLoginOkPacket { Message = $"로그인 성공: {loginPacket.UserId}" };
+        session.Send(ok.ToBytes());
+
+        Task.Run(async () =>
+        {
+            await Task.Delay(100);
+            SessionManager.Instance.BroadcastUserList();
+        });
+    }
 }

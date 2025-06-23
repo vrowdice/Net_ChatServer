@@ -22,9 +22,15 @@ namespace ServerCore
 				if (buffer.Count < HeaderSize)
 					break;
 
-				// 패킷이 완전체로 도착했는지 확인
-				ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
-				if (buffer.Count < dataSize)
+                // 패킷이 완전체로 도착했는지 확인
+                ushort dataSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
+                if (dataSize < HeaderSize) // 패킷 크기가 최소 헤더 크기보다 작으면 오류 처리 또는 연결 종료
+                {
+                    Console.WriteLine($"Invalid packet size: {dataSize}");
+                    Disconnect();
+                    break;
+                }
+                if (buffer.Count < dataSize)
 					break;
 
 				// 여기까지 왔으면 패킷 조립 가능
@@ -151,54 +157,47 @@ namespace ServerCore
 				OnRecvCompleted(null, _recvArgs);
 		}
 
-		void OnRecvCompleted(object sender, SocketAsyncEventArgs args)
-		{
-
-            if (args.BytesTransferred == 0 || args.SocketError != SocketError.Success)
-            {
-                Disconnect();
-                return;
-            }
-
+        void OnRecvCompleted(object sender, SocketAsyncEventArgs args)
+        {
             if (args.BytesTransferred > 0 && args.SocketError == SocketError.Success)
-			{
-				try
-				{
-					// Write 커서 이동
-					if (_recvBuffer.OnWrite(args.BytesTransferred) == false)
-					{
-						Disconnect();
-						return;
-					}
+            {
+                try
+                {
+                    if (_recvBuffer.OnWrite(args.BytesTransferred) == false)
+                    {
+                        Disconnect();
+                        return;
+                    }
 
-					// 컨텐츠 쪽으로 데이터를 넘겨주고 얼마나 처리했는지 받는다
-					int processLen = OnRecv(_recvBuffer.ReadSegment);
-					if (processLen < 0 || _recvBuffer.DataSize < processLen)
-					{
-						Disconnect();
-						return;
-					}
+                    int processLen = OnRecv(_recvBuffer.ReadSegment);
+                    if (processLen < 0 || _recvBuffer.DataSize < processLen)
+                    {
+                        Disconnect();
+                        return;
+                    }
 
-					// Read 커서 이동
-					if (_recvBuffer.OnRead(processLen) == false)
-					{
-						Disconnect();
-						return;
-					}
+                    if (_recvBuffer.OnRead(processLen) == false)
+                    {
+                        Disconnect();
+                        return;
+                    }
 
-					RegisterRecv();
-				}
-				catch (Exception e)
-				{
-					Console.WriteLine($"OnRecvCompleted Failed {e}");
-				}
-			}
-			else
-			{
-				Disconnect();
-			}
-		}
+                    RegisterRecv();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"OnRecvCompleted Failed {e}");
+                    Disconnect();
+                }
+            }
+            else
+            {
+                Console.WriteLine("Disconnecting due to zero bytes or socket error.");
+                Disconnect();
+            }
+        }
 
-		#endregion
-	}
+
+        #endregion
+    }
 }

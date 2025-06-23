@@ -1,31 +1,26 @@
-﻿// ServerCore 프로젝트에 포함
-// PacketHandler.cs
-using System;
+﻿using System;
 using ServerCore;
 
-public class PacketHandler
+public static class PacketHandler
 {
-    // 각 패킷 ID에 해당하는 처리 함수들을 등록할 딕셔너리
+    // 패킷 ID별 처리 함수 등록용 배열
     public static Action<PacketSession, ArraySegment<byte>>[] Handler { get; private set; }
 
     public static void Init()
     {
-        Console.WriteLine("PacketHandler Init() called.");
+        Console.WriteLine("[PacketHandler] Init() called.");
         Handler = new Action<PacketSession, ArraySegment<byte>>[2000];
+
+        // 패킷 ID 등록
         Handler[ConstPacketId.C_CHAT] = HandleCChat;
         Handler[ConstPacketId.C_LOGIN] = HandleCLogin;
     }
 
     public static void HandlePacket(PacketSession session, ArraySegment<byte> buffer)
     {
-        if (Handler == null)
-        {
-            Console.WriteLine("Handler array is null.");
-            return;
-        }
         if (buffer.Array == null || buffer.Count < PacketSession.HeaderSize)
         {
-            Console.WriteLine("Invalid buffer data.");
+            Console.WriteLine("[PacketHandler] Invalid buffer data.");
             return;
         }
 
@@ -34,52 +29,79 @@ public class PacketHandler
 
         if (packetId >= Handler.Length || Handler[packetId] == null)
         {
-            Console.WriteLine($"No handler for Packet ID: {packetId}");
+            Console.WriteLine($"[PacketHandler] No handler for Packet ID: {packetId}");
             return;
         }
 
-        Handler[packetId].Invoke(session, buffer);
+        try
+        {
+            Handler[packetId].Invoke(session, buffer);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PacketHandler] Error handling packet {packetId}: {ex.Message}");
+        }
     }
-
 
     private static void HandleCChat(PacketSession session, ArraySegment<byte> buffer)
     {
-        ClientSession clientSession = session as ClientSession;
-        if (clientSession == null)
+        if (session is not ClientSession clientSession)
+        {
+            Console.WriteLine("[PacketHandler] Invalid session type for C_CHAT.");
             return;
+        }
 
-        ClientChatPacket chatPacket = ClientChatPacket.FromBytes(buffer);
-        string userId = clientSession.UserId ?? "Unknown";
+        try
+        {
+            var chatPacket = ClientChatPacket.FromBytes(buffer);
+            string userId = clientSession.UserId ?? "Unknown";
 
-        Console.WriteLine($"Received chat message from [{userId}]: {chatPacket.Message}");
+            Console.WriteLine($"[PacketHandler] Chat from [{userId}]: {chatPacket.Message}");
 
-        ServerChatPacket broadcastPacket = new ServerChatPacket { Message = $"[{userId}] {chatPacket.Message}" };
-        ArraySegment<byte> sendBuff = broadcastPacket.ToBytes();
+            var broadcast = new ServerChatPacket
+            {
+                Message = $"[{userId}] {chatPacket.Message}"
+            };
 
-        SessionManager.Instance.Broadcast(sendBuff);
+            SessionManager.Instance.Broadcast(broadcast.ToBytes());
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PacketHandler] HandleCChat error: {ex.Message}");
+        }
     }
 
-
-    public static void HandleCLogin(PacketSession session, ArraySegment<byte> buffer)
+    private static void HandleCLogin(PacketSession session, ArraySegment<byte> buffer)
     {
-        ClientSession clientSession = session as ClientSession;
-        if (clientSession == null)
+        if (session is not ClientSession clientSession)
+        {
+            Console.WriteLine("[PacketHandler] Invalid session type for C_LOGIN.");
             return;
+        }
 
-        ClientLoginPacket loginPacket = ClientLoginPacket.FromBytes(buffer);
+        try
+        {
+            var loginPacket = ClientLoginPacket.FromBytes(buffer);
+            clientSession.UserId = loginPacket.UserId;
 
-        clientSession.UserId = loginPacket.UserId;
+            Console.WriteLine($"[PacketHandler] User '{clientSession.UserId}' logged in.");
 
-        Console.WriteLine($"User '{clientSession.UserId}' logged in.");
+            var okPacket = new ServerLoginOkPacket
+            {
+                Message = $"로그인 성공: {clientSession.UserId}"
+            };
+            clientSession.Send(okPacket.ToBytes());
 
-        // 로그인 성공 패킷 생성
-        ServerLoginOkPacket okPacket = new ServerLoginOkPacket();
-        okPacket.Message = $"Welcome, {clientSession.UserId}!";
-        ArraySegment<byte> sendBuff = okPacket.ToBytes();
-
-        clientSession.Send(sendBuff);
-
-        // 모든 클라이언트에게 최신 유저 리스트 브로드캐스트
-        SessionManager.Instance.BroadcastUserList();
+            // 로그인 응답 먼저 보내고 사용자 리스트는 약간의 지연 후 전송
+            System.Threading.Tasks.Task.Run(async () =>
+            {
+                await System.Threading.Tasks.Task.Delay(100);
+                SessionManager.Instance.BroadcastUserList();
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[PacketHandler] HandleCLogin error: {ex.Message}");
+        }
     }
 }

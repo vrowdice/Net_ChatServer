@@ -13,9 +13,10 @@ public class ServerUserListPacket
         List<byte> buffer = new();
         ushort packetId = ConstPacketId.S_USER_LIST;
 
-        buffer.AddRange(BitConverter.GetBytes((ushort)0)); // Placeholder for size
+        buffer.AddRange(new byte[2]); // size 자리 확보
         buffer.AddRange(BitConverter.GetBytes(packetId));
         buffer.AddRange(BitConverter.GetBytes((ushort)UserIds.Count));
+
         foreach (string userId in UserIds)
         {
             byte[] strBytes = Encoding.UTF8.GetBytes(userId);
@@ -24,9 +25,11 @@ public class ServerUserListPacket
         }
 
         ushort totalSize = (ushort)buffer.Count;
-        Array.Copy(BitConverter.GetBytes(totalSize), 0, buffer.ToArray(), 0, 2);
-        return new ArraySegment<byte>(buffer.ToArray());
+        byte[] result = buffer.ToArray();
+        Array.Copy(BitConverter.GetBytes(totalSize), 0, result, 0, 2);
+        return new ArraySegment<byte>(result);
     }
+
 
     public static ServerUserListPacket FromBytes(ArraySegment<byte> buffer)
     {
