@@ -32,29 +32,53 @@ public class ClientSessionWinForms : PacketSession
 
     public override void OnRecvPacket(ArraySegment<byte> buffer)
     {
-        if (buffer.Array == null || buffer.Offset < 0 || buffer.Offset + 2 > buffer.Count || buffer.Offset + 2 > buffer.Array.Length)
+        if (buffer.Array == null)
         {
-            _form.DisplayMessage($"수신 버퍼 오류: 유효하지 않은 패킷 데이터.");
+            _form.DisplayMessage("수신 버퍼 오류: 버퍼가 null입니다.");
+            return;
+        }
+
+        if (buffer.Count < 4) // 최소 헤더 크기 (2바이트 size + 2바이트 packetId)
+        {
+            _form.DisplayMessage("수신 버퍼 오류: 패킷 데이터가 너무 짧습니다.");
+            return;
+        }
+
+        ushort packetSize = BitConverter.ToUInt16(buffer.Array, buffer.Offset);
+        if (buffer.Count < packetSize)
+        {
+            _form.DisplayMessage($"수신 버퍼 오류: 전체 패킷 크기({packetSize}바이트)에 못 미치는 데이터입니다.");
             return;
         }
 
         ushort packetId = BitConverter.ToUInt16(buffer.Array, buffer.Offset + 2);
 
-        if (packetId == ConstPacketId.S_CHAT)
+        switch (packetId)
         {
-            ServerChatPacket chatPacket = ServerChatPacket.FromBytes(buffer);
-            _form.DisplayMessage($"[메시지] {chatPacket.Message}");
-        }
-        else if (packetId == ConstPacketId.S_LOGIN_OK)
-        {
-            ServerLoginOkPacket loginOkPacket = ServerLoginOkPacket.FromBytes(buffer);
-            OnLoginOk(loginOkPacket);
-        }
-        else
-        {
-            _form.DisplayMessage($"알 수 없는 패킷 수신: ID={packetId}");
+            case ConstPacketId.S_CHAT:
+                {
+                    var chatPacket = ServerChatPacket.FromBytes(buffer);
+                    _form.DisplayMessage($"[메시지] {chatPacket.Message}");
+                    break;
+                }
+            case ConstPacketId.S_LOGIN_OK:
+                {
+                    var loginOkPacket = ServerLoginOkPacket.FromBytes(buffer);
+                    OnLoginOk(loginOkPacket);
+                    break;
+                }
+            case ConstPacketId.S_WHISPER:
+                {
+                    var whisperPacket = ServerWhisperPacket.FromBytes(buffer);
+                    _form.DisplayMessage($"[Whisper from {whisperPacket.SenderUserId}] {whisperPacket.Message}");
+                    break;
+                }
+            default:
+                _form.DisplayMessage($"알 수 없는 패킷 수신: ID={packetId}");
+                break;
         }
     }
+
 
     public void OnLoginOk(ServerLoginOkPacket packet)
     {

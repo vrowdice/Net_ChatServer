@@ -129,7 +129,7 @@ namespace ChatClientWinForms
                 return;
             }
 
-            string message = messageInputTextBox.Text;
+            string message = messageInputTextBox.Text.Trim();
             if (string.IsNullOrWhiteSpace(message))
             {
                 DisplayMessage("보낼 메시지를 입력하세요.");
@@ -138,14 +138,55 @@ namespace ChatClientWinForms
 
             try
             {
-                ClientChatPacket chatPacket = new ClientChatPacket { Message = message };
-                _currentSession.Send(chatPacket.ToBytes());
-                messageInputTextBox.Text = ""; // 입력 필드 초기화
+                if (message.StartsWith("/"))
+                {
+                    // 귓속말 형식: /아이디 메시지
+                    int spaceIdx = message.IndexOf(' ');
+                    if (spaceIdx > 1)
+                    {
+                        string targetId = message.Substring(1, spaceIdx - 1);
+                        string whisperMsg = message.Substring(spaceIdx + 1);
+
+                        ClientWhisperPacket whisper = new ClientWhisperPacket
+                        {
+                            TargetUserId = targetId,
+                            Message = whisperMsg
+                        };
+                        _currentSession.Send(whisper.ToBytes());
+                        DisplayMessage($"[To {targetId}] {whisperMsg}");
+                    }
+                    else
+                    {
+                        DisplayMessage("귓속말 형식: /아이디 메시지");
+                    }
+                }
+                else
+                {
+                    ClientChatPacket chatPacket = new ClientChatPacket { Message = message };
+                    _currentSession.Send(chatPacket.ToBytes());
+                }
+
+                messageInputTextBox.Text = "";
             }
             catch (Exception ex)
             {
                 DisplayMessage($"메시지 전송 실패: {ex.Message}");
-                _currentSession.Disconnect(); // 전송 실패 시 연결 끊기
+                _currentSession.Disconnect();
+            }
+        }
+
+        public void UpdateUserList(List<string> users)
+        {
+            if (userListBox.InvokeRequired)
+            {
+                userListBox.Invoke(() => UpdateUserList(users));
+                return;
+            }
+
+            userListBox.Items.Clear();
+            foreach (string user in users)
+            {
+                userListBox.Items.Add(user);
             }
         }
     }

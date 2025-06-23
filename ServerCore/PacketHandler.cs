@@ -78,5 +78,8 @@ public class PacketHandler
         ArraySegment<byte> sendBuff = okPacket.ToBytes();
 
         clientSession.Send(sendBuff);
+
+        // 모든 클라이언트에게 최신 유저 리스트 브로드캐스트
+        SessionManager.Instance.BroadcastUserList();
     }
 }
