@@ -24,7 +24,7 @@ namespace ChatClientWinForms
         {
             InitializeComponent(); // UI 컴포넌트 초기화
 
-            ipTextBox.Text = "192.168.219.110";
+            ipTextBox.Text = "192.0.0.7";
             portTextBox.Text = "7777";
         }
 

@@ -68,7 +68,15 @@ public static class PacketHandler
                 Message = $"[{userId}] {chatPacket.Message}"
             };
 
-            SessionManager.Instance.Broadcast(broadcast.ToBytes());
+            if (clientSession.CurrentRoom != null)
+            {
+                clientSession.CurrentRoom.Broadcast(broadcast.ToBytes());
+                Console.WriteLine($"[PacketHandler] Chat broadcasted in Room ID: {clientSession.CurrentRoom.Id}");
+            }
+            else
+            {
+                Console.WriteLine($"[PacketHandler] User '{userId}' is not in any room. Chat not broadcasted.");
+            }
         }
         catch (Exception ex)
         {
